@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.json",
+  "name": "com.outputcharts/mcp",
+  "description": "Dashboards from JSON with a stable public link; sign up, build and keep fresh, all as tools.",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/outputcharts/skill",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "websiteUrl": "https://outputcharts.com",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.outputcharts.com/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <your Output Charts API key>. Leave it out to get the two keyless tools, signup and describe_visual_types; signup returns a key.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
