@@ -3,7 +3,64 @@
   "name": "Output Charts",
   "version": "1.0.0",
   "author": "outputcharts",
+  "authorUrl": "https://outputcharts.com",
+  "category": "developer",
   "cloudEndpoint": "https://api.outputcharts.com/mcp",
   "description": "Dashboards from JSON with a stable public link; sign up, build and keep fresh, all as tools.",
-  "homepage": "https://outputcharts.com"
+  "homepage": "https://outputcharts.com",
+  "icon": "https://outputcharts.com/icon-512.png",
+  "tools": [
+    {
+      "name": "signup",
+      "title": "Signup",
+      "description": "Create an account for a person's email and a Manage key for this agent; the person claims the account from the claim link. 5 per IP and 300 in all a day. Creates an account for the person's email, with a seven-day Solo trial and a Manage key for this agent, and emails them a claim link. The trial is once per person: a mailbox that had one (plus tags and Gmail dots count as the same mailbox), or a second sign-up from one network within 30 days, gets the account on Free with no trial, and the response says so in fix. 409 email_taken when the address already has an account: its owner makes a key under Account → API keys instead. Limited to 5 sign-ups per IP and 300 in all a day (429 rate_limited).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 128,
+            "description": "The person's address. The account is theirs; the claim email goes there."
+          },
+          "agentName": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "The agent or product making the account, such as Claude Code. Names the key and is mentioned in the claim email."
+          },
+          "useCase": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "What the person wants a dashboard for, in a sentence."
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "describe_visual_types",
+      "title": "Describe visual types",
+      "description": "The visual types, each with its document rules, an example document and its size limits; the widths, schemes and limits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
 }
