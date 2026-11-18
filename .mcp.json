@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "output-charts": {
+      "url": "https://api.outputcharts.com/mcp"
+    }
+  }
+}

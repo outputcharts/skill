@@ -1,0 +1,9 @@
+{
+  "identifier": "output-charts",
+  "name": "Output Charts",
+  "version": "1.0.0",
+  "author": "outputcharts",
+  "cloudEndpoint": "https://api.outputcharts.com/mcp",
+  "description": "Dashboards from JSON with a stable public link; sign up, build and keep fresh, all as tools.",
+  "homepage": "https://outputcharts.com"
+}
