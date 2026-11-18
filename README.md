@@ -2,6 +2,8 @@
 
 # Output Charts skill for AI agents
 
+[![mcptry](https://mcptry.com/badge/com.outputcharts/mcp)](https://mcptry.com/servers/com.outputcharts/mcp)
+
 [Output Charts](https://outputcharts.com) turns JSON into a dashboard with a stable public link. This repository holds the skill file that teaches an agent the whole flow: open an account for the person it works for, build a published dashboard in one HTTP call, hand back the link, and keep the page fresh with pushes from a script, a cron job or its own next run.
 
 `SKILL.md` is a copy of the file the site serves at [outputcharts.com/skill/SKILL.md](https://outputcharts.com/skill/SKILL.md). The site's copy is the one that moves first; `./check-skill.sh` says whether this one still matches it.
