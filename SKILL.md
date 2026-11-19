@@ -92,7 +92,7 @@ A different 403, `claim_required`, means the person has not claimed the account 
 
 ### 6. Over MCP instead of HTTP
 
-The same API is an MCP server. With no key, `https://api.outputcharts.com/mcp` serves two tools, `signup` and `describe_visual_types`; after `signup`, reconnect with the key as a bearer token at the same URL (Claude Code: `claude mcp add --transport http output-charts https://api.outputcharts.com/mcp --header "Authorization: Bearer $OC_KEY"`) or add `apiKey.mcpUrl` as a connector in a chat app. The tools are the calls above by name: `create_dashboard`, `push_visual_data`, `append_rows`, `batch_update`, `create_api_key`, `get_checkout_link`, `whoami`.
+The same API is an MCP server. With no key, `https://api.outputcharts.com/mcp` lists every tool and runs two, `signup` and `describe_visual_types`; after `signup`, reconnect with the key as a bearer token at the same URL (Claude Code: `claude mcp add --transport http output-charts https://api.outputcharts.com/mcp --header "Authorization: Bearer $OC_KEY"`) or add `apiKey.mcpUrl` as a connector in a chat app. The tools are the calls above by name: `create_dashboard`, `push_visual_data`, `append_rows`, `batch_update`, `create_api_key`, `get_checkout_link`, `whoami`.
 
 ## Worked examples
 
