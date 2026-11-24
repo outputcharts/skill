@@ -1,0 +1,18 @@
+name: Listings match schemas.js visual types
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 7 * * *" # daily, 07:00 UTC: catches a new type added to the API
+  workflow_dispatch:
+
+jobs:
+  visual-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test
