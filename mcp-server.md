@@ -11,8 +11,9 @@ The text below is what the MCP directories index. Keep every listing consistent 
 | Remote URL | `https://api.outputcharts.com/mcp` |
 | Transport | Streamable HTTP (JSON responses; `POST` only, `GET` answers 405) |
 | Authentication | None to start. `signup` returns an API key; then send it as `Authorization: Bearer <key>`, or connect at the per-key URL `https://api.outputcharts.com/mcp/<key>` from a chat app that cannot send a header. |
-| Tools with no key | `signup`, `describe_visual_types` |
-| Tools with a key | `whoami`, `create_api_key`, `get_checkout_link`, `list_dashboards`, `create_dashboard`, `get_dashboard`, `update_dashboard`, `reorder_visuals`, `publish_dashboard`, `unpublish_dashboard`, `share_dashboard`, `list_shares`, `revoke_share`, `create_visual`, `batch_update`, `get_visual`, `update_visual`, `delete_visual`, `push_visual_data`, `append_rows`, plus the two above (22 in all) |
+| Tools listed | All 22, with or without a key (a Push only key lists the seven it can call) |
+| Tools that run with no key | `signup`, `describe_visual_types` |
+| Tools that need a key | `whoami`, `create_api_key`, `get_checkout_link`, `list_dashboards`, `create_dashboard`, `get_dashboard`, `update_dashboard`, `reorder_visuals`, `publish_dashboard`, `unpublish_dashboard`, `share_dashboard`, `list_shares`, `revoke_share`, `create_visual`, `batch_update`, `get_visual`, `update_visual`, `delete_visual`, `push_visual_data`, `append_rows`, plus the two above (22 in all) |
 | Website | https://outputcharts.com |
 | Docs | https://outputcharts.com/docs/mcp (setup per client) · https://outputcharts.com/docs/agent-api (every call) |
 | Skill file | https://outputcharts.com/skill/SKILL.md |
@@ -56,7 +57,7 @@ Claude (web and desktop apps): Customize → Connectors → Add custom connector
 
 ## Instructions the server sends
 
-With no key: "You are connected without an API key. Call signup with the person's email address to create their Output Charts account and get a key, then reconnect: scripts and IDE agents send Authorization: Bearer <key>; chat apps add a new connector at the mcpUrl in the result. describe_visual_types works without a key."
+With no key: "You are connected without an API key. Every tool is listed, but only signup and describe_visual_types run without a key; the others answer invalid_api_key until you reconnect with one. Call signup with the person's email address to create their Output Charts account and get a key, then reconnect: scripts and IDE agents send Authorization: Bearer <key>; chat apps add a new connector at the mcpUrl in the result."
 
 With a key: "Output Charts builds dashboards of visuals. Call describe_visual_types once to learn the visual types, their document rules and an example of each. Dashboards and visuals have a ref you choose: create them with a ref so a later run finds the same object instead of making a duplicate, and push new data to a visual by its id with push_visual_data. Make calls to one dashboard one at a time. No tool deletes a dashboard. When a call answers requires_solo, the account's Solo trial has ended: call get_checkout_link and give the person the checkoutUrl; whoami still works, and every call works again as soon as they pay."
 

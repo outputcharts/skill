@@ -17,7 +17,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer <your Output Charts API key>. Leave it out to get the two keyless tools, signup and describe_visual_types; signup returns a key.",
+          "description": "Bearer <your Output Charts API key>. Leave it out to start: every tool is listed, signup and describe_visual_types run without a key, and signup returns one.",
           "isRequired": false,
           "isSecret": true
         }

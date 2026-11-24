@@ -42,7 +42,7 @@ The file is plain Markdown with a two-line front matter, so it works wherever an
 
 ## The MCP server
 
-The same API is an MCP server at `https://api.outputcharts.com/mcp` (streamable HTTP). It works before an account exists: with no key it serves two tools, `signup` and `describe_visual_types`. After `signup`, reconnect with the key as a bearer token, or add the per-key URL the sign-up returns (`https://api.outputcharts.com/mcp/<key>`) as a connector in a chat app that cannot send a header.
+The same API is an MCP server at `https://api.outputcharts.com/mcp` (streamable HTTP). It works before an account exists: with no key it lists every tool and runs two, `signup` and `describe_visual_types`. After `signup`, reconnect with the key as a bearer token, or add the per-key URL the sign-up returns (`https://api.outputcharts.com/mcp/<key>`) as a connector in a chat app that cannot send a header.
 
 Claude Code:
 
