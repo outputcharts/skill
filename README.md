@@ -67,6 +67,12 @@ Cursor, Claude, ChatGPT and Grok steps are in [the MCP server docs](https://outp
 
 fetches the site's file and diffs it against `SKILL.md`; exit code 0 means they match. Pass a path to compare with a local copy instead.
 
+```bash
+node --test
+```
+
+checks that the visual types listed in `mcp-server.md`'s long description and in `lhm.plugin.json` match the types in `schemas.js` (read from [/v1/schema](https://api.outputcharts.com/v1/schema), which is built from it; set `OC_SCHEMA=path/to/schemas.js` to read a local copy), and that no listing states a stale count such as "eleven visual types". `node check-visual-types.mjs other.md ...` also checks counts in files outside this repo.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). The Output Charts name and mark belong to Output Charts.
