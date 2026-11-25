@@ -27,6 +27,9 @@ export const DISPLAY_NAMES = {
   funnel: ["funnel"],
   gauge: ["gauge"],
   map: ["map"],
+  progress: ["progress list"],
+  "status-grid": ["status grid"],
+  heatmap: ["heatmap"],
 };
 
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",

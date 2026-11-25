@@ -208,7 +208,10 @@
                     "scatter",
                     "funnel",
                     "gauge",
-                    "map"
+                    "map",
+                    "progress",
+                    "status-grid",
+                    "heatmap"
                   ]
                 },
                 "title": {
@@ -573,7 +576,10 @@
               "scatter",
               "funnel",
               "gauge",
-              "map"
+              "map",
+              "progress",
+              "status-grid",
+              "heatmap"
             ]
           },
           "title": {

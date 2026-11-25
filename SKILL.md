@@ -52,7 +52,7 @@ Two ways to give people access, in the same call or later, with or without each 
 
 - Give the dashboard and every visual a `ref` (1 to 64 of `a-z`, `0-9`, `-`, unique per owner for dashboards and per dashboard for visuals). A later run with the same body answers `200` with `created: false` and the same objects, so re-running never makes duplicates, and a run cut short by an error is finished by the next.
 - Each visual is `{ "type", "title", "ref", "document", "size" }`. `document` is the visual's whole JSON (settings and data together), valid for its `type`; the rules per type are in `GET /v1/schema`, and the worked examples below are valid as written. `size` is `{ "w", "h" }`: `w` in columns of a 12-column grid, `h` in 50-pixel rows, each type with its own minimums: a KPI or markdown is at least 3 by 3, a table at least 4 by 4, every chart and the gauge at least 3 wide and 4 tall, a map at least 4 wide and 6 tall; the maximum is 12 by 16 for all. A size outside that is `400` with a `fix` naming the type's limits. Leave `size` out for the type's default (6 by 3 for a KPI, 6 by 8 for a chart or a table, 12 by 14 for a map: full width).
-- Everything is checked before anything is written. A bad document answers `422 invalid_document` with `details` (each a `path` such as `visuals[2].document.data[0].users` and a `message`), a `fix` sentence and an `example` document of that type; nothing exists afterwards. `"dryRun": true` answers `200 { "dryRun": true }` or that error, writing nothing.
+- Everything is checked before anything is written. A bad document answers `422 invalid_document` with `details` (each a `path` such as `visuals[2].document.data[0].users` and a `message`), a `fix` sentence and an `example` document of that type (for a heatmap, of the layout sent); nothing exists afterwards. `"dryRun": true` answers `200 { "dryRun": true }` or that error, writing nothing.
 - Limits: 20 dashboards per account on Solo, 24 visuals per dashboard, documents up to 100 KB, 500 rows per chart and 200 per table, 60 calls a minute per key.
 
 ### 3. Keep it fresh
@@ -60,7 +60,7 @@ Two ways to give people access, in the same call or later, with or without each 
 Three ways, all with a Push or Manage key, all answering `coerced` (the numeric strings that became numbers, at most 20 listed) and `coercedCount`:
 
 - Replace one visual: `PUT /v1/visuals/{id}/data` with the new document as the body.
-- Append rows to a chart or a table: `POST /v1/visuals/{id}/rows` with `{ "rows": [ … ], "keepLast": 90 }`. The visual's settings stay; the rows go on the end and the oldest fall off past `keepLast`. On a map the rows merge by region instead (a sent row replaces the stored row with the same code, the others are added, `keepLast` is ignored), so three states update without re-sending fifty. Two appends at the same moment lose nothing.
+- Append rows to a chart or a table: `POST /v1/visuals/{id}/rows` with `{ "rows": [ … ], "keepLast": 90 }`. The visual's settings stay; the rows go on the end and the oldest fall off past `keepLast`. On a map the rows merge by region, on a progress list or a status grid by name, and on a heatmap by cell (the x and y pair) or by date, instead (a sent row replaces the stored row with the same code, name, cell or date, the others are added, `keepLast` is ignored), so three states update without re-sending fifty. An append that would take one of these past its row cap (20 on a progress list, 200 on a status grid, 1000 on a heatmap, 4000 on a map) is refused at `rows`, with a `fix`: replace the whole list with `PUT /v1/visuals/{id}/data`. A calendar heatmap keeps its latest 366 days on its own, so a daily job can push forever: the latest date sets a calendar's 366-day window, an append drops the days before it and counts them in `dropped`, and an append that would push every stored day out of it is refused, so a mistyped year cannot erase the calendar. Two appends at the same moment lose nothing.
 - Update several visuals at once: `PUT /v1/dashboards/{id}/data` with `{ "<ref>": <document>, … }`. Every entry is tried; `200` when all were written, `422 batch_failed` with per-ref `results` otherwise.
 
 Both the replace and the append also take `Content-Type: text/csv`: the header row is the keys the visual's rows have (`date,users`), and on the append `keepLast` goes in the query string (`?keepLast=90`). A header with a key the visual does not have is `422` with a `fix` naming the keys it expects; no column is dropped in silence.
@@ -468,12 +468,98 @@ Next month, both maps in one batch, each the whole row list (a map is a snapshot
 }
 ```
 
+### Project progress and site checks, one call
+
+Four projects against their own targets and the checks behind them: a progress list takes one row per project (the bar is done over total, the rules colour it) and a status grid one tile per check, your words mapped to good, warn or bad.
+
+```json
+{
+  "title": "Project progress",
+  "ref": "project-progress",
+  "scheme": "ledger",
+  "publish": true,
+  "visuals": [
+    {
+      "type": "progress",
+      "title": "Done against target",
+      "ref": "progress",
+      "size": {
+        "w": 7,
+        "h": 9
+      },
+      "document": {
+        "nameKey": "project",
+        "valueKey": "done",
+        "maxKey": "total",
+        "format": "number",
+        "suffix": " items",
+        "rules": [
+          {
+            "below": 0.5,
+            "status": "bad"
+          },
+          {
+            "below": 0.9,
+            "status": "warn"
+          },
+          {
+            "atLeast": 0.9,
+            "status": "good"
+          }
+        ],
+        "data": [
+          { "project": "Website relaunch", "done": 34, "total": 40 },
+          { "project": "Mobile app", "done": 12, "total": 30 },
+          { "project": "Docs rewrite", "done": 22, "total": 20 },
+          { "project": "Billing migration", "done": 18, "total": 24 }
+        ]
+      }
+    },
+    {
+      "type": "status-grid",
+      "title": "Checks",
+      "ref": "checks",
+      "size": {
+        "w": 5,
+        "h": 9
+      },
+      "document": {
+        "nameKey": "name",
+        "statusKey": "check",
+        "noteKey": "note",
+        "statuses": {
+          "Passing": "good",
+          "Warnings": "warn",
+          "Failing": "bad"
+        },
+        "data": [
+          { "name": "Website relaunch · build", "check": "Passing", "note": "Last run 23 Nov" },
+          { "name": "Website relaunch · links", "check": "Warnings", "note": "4 redirects open" },
+          { "name": "Mobile app · build", "check": "Failing", "note": "Since 20 Nov" },
+          { "name": "Mobile app · tests", "check": "Passing", "note": "212 of 212" },
+          { "name": "Billing migration · tests", "check": "Warnings", "note": "2 flaky" }
+        ]
+      }
+    }
+  ]
+}
+```
+
+When one project moves, send only its row to `POST /v1/visuals/{id}/rows`: a progress list merges by name, so the row replaces the stored `Mobile app` row and the other projects stay. A status grid merges by name the same way, so one check that went green is one row.
+
+```json
+{"rows":[{"project":"Mobile app","done":19,"total":30}]}
+```
+
 ## Rules that save a call
 
 - Every row of a chart needs the x key and every series key; put `0`, not nothing, where a day had no value. A line or area takes 1 to 6 series; a bar takes `orientation` (`vertical` for `bar`, `horizontal` for `bar-horizontal`) and `mode` (`grouped` or `stacked`).
 - A `line`, `area`, `bar` or `bar-horizontal` takes `references`, up to 6 of `{ "value": 100, "label": "Budget" }` (a flat line) or `{ "at": "Mar", "label": "Launch" }` (a marker at a category; a `value` reference takes `"axis": "right"` when a series is on the right axis, line and bar only); a `line` or `area` series takes `"dashed": true`. A `line` series takes `"axis": "right"` (one series stays left); a `bar` series takes `"as": "line"`, and such a series may also be dashed and on the right axis. A `table` text column takes `statuses` (`{ "Patched": "good", "Not patched": "bad" }`, values good, warn or bad); a number or percent column takes `rules` (`[{ "below": 0, "status": "bad" }, { "atLeast": 0.2, "status": "good" }]`, first match wins). A text column also takes `hrefKey`, a row key holding an http(s) URL that links the cell.
 - A KPI is `{ label, value, format }` plus optional `prefix`, `suffix`, `delta`, `deltaFormat`, `deltaLabel`, `trend` (up to 60 numbers, oldest first); `format` is `number`, `compact` or `percent`, and a percent value is a fraction (`0.25`). A gauge is `{ label, value, min, max }`. A table's `columns` carry `key`, `label`, `align` (`left` or `right`) and `format` (`text`, `number`, `percent`).
 - A map is `{ region, idKey, valueKey, data }` plus optional `labelKey`, `format`, `prefix`, `suffix`; `region` is `world` (rows keyed by ISO 3166-1 alpha-2 code, `DE`; alpha-3 accepted), `us-states` (USPS code, `CA`; two-digit FIPS accepted) or `us-counties` (five-digit county FIPS code, `06037`; the county lines of 2017), case ignored, one row per region. A real code with no shape on the map (Puerto Rico and the territories; territories drawn as part of their country; Connecticut's planning regions and Alaska's Chugach and Copper River on the counties map) is refused by name: drop the row.
+- A progress list is `{ nameKey, valueKey, maxKey or max, data }` plus optional `format`, `prefix`, `suffix`, `rules` (the table's, judged on value ÷ target); up to 20 rows, names unique; an append merges by name, and one that would make more than 20 rows is refused.
+- A status grid is `{ nameKey, statusKey, data }` plus optional `statuses` (your words to good, warn or bad), `noteKey`, `hrefKey`; up to 200 items, names unique; without `statuses` a status is good, warn, bad or empty; an append merges by name, and one that would make more than 200 rows is refused.
+- A heatmap is `{ layout, valueKey, data }` plus `xKey` and `yKey` (`layout: "grid"`, x and y as strings (`"07"`, not `7`), at most 60 distinct x and 60 distinct y values) or `dateKey` (`layout: "calendar"`, dates as YYYY-MM-DD spanning at most 366 days), and optional `format`, `prefix`, `suffix`; up to 1000 rows, one per cell or date; an append merges by cell or date, and one that would make more than 1000 rows is refused. The latest date sets a calendar's 366-day window: an append drops the days before it and counts them in `dropped`, and an append that would push every stored day out of it is refused. A calendar: `{"layout":"calendar","dateKey":"date","valueKey":"minutes","suffix":" min","data":[{"date":"2026-11-23","minutes":45},{"date":"2026-11-24","minutes":30}]}`.
 - Titles up to 120 characters, labels up to 80, table cells up to 200. `scheme` is `ink` (default), `carbon`, `paper`, `ledger`, `slate` or `signal`.
 - Treat `fix` as the next instruction and `example` as the shape to copy. A `429` carries `Retry-After` in seconds (the next UTC minute). A `409 conflict` means two calls changed one dashboard at once: send the call again, one at a time.
 - Tell the person four things when you hand over the link: the URL; that the claim link in their email (or `claimUrl`) makes the account theirs and must be opened within 24 hours, or updates pause until it is; that the trial is seven days, once per person; and that the account is deleted after 30 days if nobody claims or pays.
