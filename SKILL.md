@@ -551,6 +551,79 @@ When one project moves, send only its row to `POST /v1/visuals/{id}/rows`: a pro
 {"rows":[{"project":"Mobile app","done":19,"total":30}]}
 ```
 
+### Monthly money flow, one call
+
+A month of household money: a sankey takes one row per flow (an amount from one named item to another, read left to right, so no flow may loop back) and a treemap one row per merchant, grouped by category, with the same totals.
+
+```json
+{
+  "title": "Monthly spending",
+  "ref": "monthly-spending",
+  "scheme": "paper",
+  "publish": true,
+  "visuals": [
+    {
+      "type": "sankey",
+      "title": "Where the money went",
+      "ref": "flow",
+      "size": {
+        "w": 12,
+        "h": 10
+      },
+      "document": {
+        "sourceKey": "from",
+        "targetKey": "to",
+        "valueKey": "amount",
+        "format": "number",
+        "prefix": "$",
+        "data": [
+          { "from": "Salary", "to": "Budget", "amount": 5200 },
+          { "from": "Side job", "to": "Budget", "amount": 800 },
+          { "from": "Budget", "to": "Home", "amount": 2105 },
+          { "from": "Budget", "to": "Food", "amount": 885 },
+          { "from": "Budget", "to": "Savings", "amount": 3010 },
+          { "from": "Food", "to": "Grocer", "amount": 420 },
+          { "from": "Food", "to": "Cafe", "amount": 220 },
+          { "from": "Food", "to": "Other food", "amount": 245 }
+        ]
+      }
+    },
+    {
+      "type": "treemap",
+      "title": "Spending by merchant",
+      "ref": "merchants",
+      "size": {
+        "w": 12,
+        "h": 8
+      },
+      "document": {
+        "nameKey": "merchant",
+        "valueKey": "spent",
+        "groupKey": "category",
+        "format": "number",
+        "prefix": "$",
+        "data": [
+          { "category": "Home", "merchant": "Rent", "spent": 1800 },
+          { "category": "Home", "merchant": "Utilities", "spent": 305 },
+          { "category": "Food", "merchant": "Grocer", "spent": 420 },
+          { "category": "Food", "merchant": "Cafe", "spent": 220 },
+          { "category": "Food", "merchant": "Other food", "spent": 245 }
+        ]
+      }
+    }
+  ]
+}
+```
+
+Next month, replace both documents; neither has a row list, so there is no append: send each whole document with `PUT /v1/visuals/{id}/data`, or both in one batch by ref, `PUT /v1/dashboards/{id}/data`. A flow that would close a loop (`Savings` back into `Budget`) is refused with the loop named, and a merchant at `0` stays in the data but is not drawn.
+
+```json
+{
+  "flow": { "sourceKey": "from", "targetKey": "to", "valueKey": "amount", "format": "number", "prefix": "$", "data": [{ "from": "Salary", "to": "Budget", "amount": 5200 }, { "from": "Budget", "to": "Home", "amount": 2105 }, { "from": "Budget", "to": "Savings", "amount": 3095 }] },
+  "merchants": { "nameKey": "merchant", "valueKey": "spent", "groupKey": "category", "format": "number", "prefix": "$", "data": [{ "category": "Home", "merchant": "Rent", "spent": 1800 }, { "category": "Home", "merchant": "Utilities", "spent": 305 }] }
+}
+```
+
 ## Rules that save a call
 
 - Every row of a chart needs the x key and every series key; put `0`, not nothing, where a day had no value. A line or area takes 1 to 6 series; a bar takes `orientation` (`vertical` for `bar`, `horizontal` for `bar-horizontal`) and `mode` (`grouped` or `stacked`).
@@ -563,3 +636,6 @@ When one project moves, send only its row to `POST /v1/visuals/{id}/rows`: a pro
 - Titles up to 120 characters, labels up to 80, table cells up to 200. `scheme` is `ink` (default), `carbon`, `paper`, `ledger`, `slate` or `signal`.
 - Treat `fix` as the next instruction and `example` as the shape to copy. A `429` carries `Retry-After` in seconds (the next UTC minute). A `409 conflict` means two calls changed one dashboard at once: send the call again, one at a time.
 - Tell the person four things when you hand over the link: the URL; that the claim link in their email (or `claimUrl`) makes the account theirs and must be opened within 24 hours, or updates pause until it is; that the trial is seven days, once per person; and that the account is deleted after 30 days if nobody claims or pays.
+- A waterfall is `{ nameKey, valueKey, data }` plus optional `totalKey` (a row with it `true` is a full column: with a value it sets the running total, with the value left out or `null` it shows the total so far), `invert`, `format`, `prefix`, `suffix`; up to 40 steps, names may repeat; no append: send the whole document with `PUT /v1/visuals/{id}/data`.
+- A treemap is `{ nameKey, valueKey, data }` plus optional `groupKey` (one level of groups, at most 12), `format`, `prefix`, `suffix`; up to 200 items, values 0 or more, names unique within their group; no append: send the whole document with `PUT /v1/visuals/{id}/data`.
+- A sankey is `{ sourceKey, targetKey, valueKey, data }` plus optional `format`, `prefix`, `suffix`; up to 100 flows between at most 50 items, values above 0; no flow from an item to itself, no repeated pair and no loop (a flow whose target already leads back to its source is refused, the loop named); no append: send the whole document with `PUT /v1/visuals/{id}/data`.

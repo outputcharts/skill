@@ -211,7 +211,10 @@
                     "map",
                     "progress",
                     "status-grid",
-                    "heatmap"
+                    "heatmap",
+                    "waterfall",
+                    "treemap",
+                    "sankey"
                   ]
                 },
                 "title": {
@@ -579,7 +582,10 @@
               "map",
               "progress",
               "status-grid",
-              "heatmap"
+              "heatmap",
+              "waterfall",
+              "treemap",
+              "sankey"
             ]
           },
           "title": {

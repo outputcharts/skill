@@ -30,6 +30,9 @@ export const DISPLAY_NAMES = {
   progress: ["progress list"],
   "status-grid": ["status grid"],
   heatmap: ["heatmap"],
+  waterfall: ["waterfall"],
+  treemap: ["treemap"],
+  sankey: ["sankey"],
 };
 
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
