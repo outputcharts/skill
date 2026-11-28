@@ -34,12 +34,12 @@ It answers `201` with:
 - `apiKey.secret`: a Manage key, shown once. Keep it for the rest of the session and send it as the bearer token on every call. Never print it in a public place.
 - `apiKey.mcpUrl`: the same key as an MCP connector URL, for chat apps that cannot send a header.
 - `claimUrl`: give this to the person in your reply. It opens the page where they sign in (Google, or a password they set) and take the account over. They also get an email with the same link (`claimEmailSent` is false when none could be sent: then the link in your reply is the only one). They must open it within 24 hours of sign-up: from then on every push answers `403 claim_required`, with `claimUrl` and a `fix`, until they do, and resumes the moment they do.
-- `account`: `tier: "paid"`, `trial: true`, `trialEndsAt`: the account is on a seven-day Solo trial from this minute, no card. Everything below works at once. The trial is once per person: a mailbox that already had one (plus tags and Gmail dots count as the same mailbox), or a second sign-up from one network within 30 days, gets `tier: "free"`, `trial: false` and a top-level `fix` instead; the account and the key exist, pushes answer `403 requires_solo`, and the way forward is section 5. Do not try another address to get a trial.
+- `account`: `tier: "free"`. Every account is free for one dashboard, which the key builds and keeps current; there is no trial. `next` repeats the plan's rule in one sentence: you can build now and correct freely for the dashboard's first 24 hours, and after that each visual takes one update a day. The rest is section 5.
 - `unclaimedUntil`: an account nobody claims and nobody pays for is deleted 30 days after sign-up, dashboards included. Say so to the person.
 
-Refusals: `409 email_taken` when the address already has an account (its `fix` says to hand the owner the whole dashboard as one JSON block to import, Workspace → Import JSON, or on Solo to make a key under Account → API keys; do not try another spelling of their address); `429 rate_limited` after 5 sign-ups from one IP or 300 in all per UTC day; `400 invalid_request` for a malformed address or an `agentName` with characters other than letters, digits, spaces and `. , ' & ( ) + _ -`.
+Refusals: `409 email_taken` when the address already has an account (its `fix` says to hand the owner the whole dashboard as one JSON block that names each visual by its ref, to import signed in: into the dashboard they have, by opening it and choosing Import JSON, or Workspace → Import JSON when they have none yet; or to make a key under Account → API keys; do not try another spelling of their address); `429 rate_limited` after 5 sign-ups from one IP or 300 in all per UTC day; `400 invalid_request` for a malformed address or an `agentName` with characters other than letters, digits, spaces and `. , ' & ( ) + _ -`.
 
-If the person already has a key, skip this step. If they have an account but no key (Free has none), skip the API: give them the whole dashboard as one JSON block in your reply, the body of step 2, and tell them to sign in and click Import JSON. `GET /v1/me` tells you what a key is and what the account may do.
+If the person already has a key, skip this step. If they have an account but no key, they can make one under Account → API keys (Free accounts can); or skip the API: give them the whole dashboard as one JSON block in your reply, the body of step 2 with a `ref` on every visual, and tell them to sign in and import it: into the dashboard they already have by opening it and choosing Import JSON (a visual whose ref it has is updated in place, the others are added), or from Workspace → Import JSON when they have none. `GET /v1/me` tells you what a key is and what the account may do.
 
 ### 2. Build the dashboard in one call
 
@@ -53,7 +53,7 @@ Two ways to give people access, in the same call or later, with or without each 
 - Give the dashboard and every visual a `ref` (1 to 64 of `a-z`, `0-9`, `-`, unique per owner for dashboards and per dashboard for visuals). A later run with the same body answers `200` with `created: false` and the same objects, so re-running never makes duplicates, and a run cut short by an error is finished by the next.
 - Each visual is `{ "type", "title", "ref", "document", "size" }`. `document` is the visual's whole JSON (settings and data together), valid for its `type`; the rules per type are in `GET /v1/schema`, and the worked examples below are valid as written. `size` is `{ "w", "h" }`: `w` in columns of a 12-column grid, `h` in 50-pixel rows, each type with its own minimums: a KPI or markdown is at least 3 by 3, a table at least 4 by 4, every chart and the gauge at least 3 wide and 4 tall, a map at least 4 wide and 6 tall; the maximum is 12 by 16 for all. A size outside that is `400` with a `fix` naming the type's limits. Leave `size` out for the type's default (6 by 3 for a KPI, 6 by 8 for a chart or a table, 12 by 14 for a map: full width).
 - Everything is checked before anything is written. A bad document answers `422 invalid_document` with `details` (each a `path` such as `visuals[2].document.data[0].users` and a `message`), a `fix` sentence and an `example` document of that type (for a heatmap, of the layout sent); nothing exists afterwards. `"dryRun": true` answers `200 { "dryRun": true }` or that error, writing nothing.
-- Limits: 20 dashboards per account on Solo, 24 visuals per dashboard, documents up to 100 KB, 500 rows per chart and 200 per table, 60 calls a minute per key.
+- Limits: 20 dashboards per account on Solo, 24 visuals per dashboard, documents up to 100 KB, 500 rows per chart and 200 per table, 60 calls a minute per key. A Free account has one dashboard (see section 5).
 
 ### 3. Keep it fresh
 
@@ -73,22 +73,39 @@ Visual ids come back in the create's `visuals[]` (one per entry, in order) and f
 
 `POST /v1/keys` with a Manage key makes a narrower one: `{ "name": "CI", "scope": "push", "dashboardId": "<the dashboard>" }` answers `201` with a key that can only send data to that dashboard's visuals, shown once. That is the key to put in a repository secret or a crontab; keep the Manage key out of them. Five live keys per account.
 
-### 5. When the trial ends
+### 5. On Free
 
-The trial lasts seven days. After it, any call but two answers:
+A Free account has one dashboard. Its keys build it and keep it current: for the dashboard's first 24 hours nothing is limited, and after that each visual takes one update a day and the account three new visuals a day. Past that the call answers 429 daily_limit with nextUpdateAt; until then, hand the person one JSON block that names each visual by its ref, to import into that dashboard (they open it and choose Import JSON, which updates the visuals whose refs it has and adds the others), or get them a Checkout link with POST /v1/billing/checkout. The workspace's own Import JSON makes a new dashboard, which a Free account that has its one cannot. A key of a Free account that holds more than one dashboard changes only the first; another answers 403 requires_solo with writableDashboardId.
+
+`GET /v1/me` says which of these applies before you push: `owner.tier`, `owner.dashboardCount` and `owner.dashboardLimit`, and `limits`, with `updatesPerVisualPerDay` (1) and `newVisualsPerDay` (3) on Free (`null` on Solo), `writableDashboardId` (the first dashboard) and `firstDayEndsAt` (`null` once the first day is over).
+
+The daily refusal, with a `Retry-After` header in seconds:
 
 ```json
 {
-  "error": "The agent API is part of Solo",
-  "code": "requires_solo",
+  "error": "This chart was already updated today on the Free plan",
+  "code": "daily_limit",
+  "nextUpdateAt": "2026-11-28T00:00:00.000Z",
   "upgradeUrl": "https://outputcharts.com/account/billing",
-  "fix": "The account's Solo trial has ended or it is on Free: call POST /v1/billing/checkout (the MCP tool get_checkout_link) for a Stripe Checkout link, give it to the account's owner, and calls work again as soon as they pay."
+  "fix": "Wait until nextUpdateAt; or give the person one JSON block that names each visual by its ref, to import into this dashboard (they open the dashboard and choose Import JSON, which updates the visuals whose refs it has); or get them a checkout link with POST /v1/billing/checkout."
 }
 ```
 
-Nothing is deleted: the dashboards stay readable, the public pages stay up, the keys pause. An account that already pays answers `409 already_subscribed` to the checkout call (nothing to pay; every call works). Do what the `fix` says: `POST /v1/billing/checkout` (Manage key; `{ "interval": "monthly" | "yearly", "promotionCode"?: "…" }`, the code applied when given one) answers `{ "checkoutUrl", "sessionId" }`. Give `checkoutUrl` to the person; it is a hosted Stripe page. The moment they pay, every call works again. `GET /v1/me` keeps working too and says `owner.tier` (`free` after the trial), `owner.trial`, `owner.trialEndsAt`, `owner.upgradeUrl` and, on an account whose trial was withheld, `owner.fix`, so you can tell the person before a push fails.
+A new chart past the three a day answers the same code with `This account has added 3 charts today on the Free plan`. A key that tries a second dashboard on Free answers:
 
-A different 403, `claim_required`, means the person has not claimed the account within 24 hours of sign-up. Its body carries `claimUrl`, `upgradeUrl` and a `fix`; nothing is deleted, `GET /v1/me` and the checkout still answer, and every call works again the moment the person opens the claim link. Give them `claimUrl` again and wait; do not sign them up anew.
+```json
+{
+  "error": "On Free an API key can change one dashboard",
+  "code": "requires_solo",
+  "upgradeUrl": "https://outputcharts.com/account/billing",
+  "writableDashboardId": "…",
+  "fix": "This account is on Free, where a key changes only its first dashboard, …. Work on that one, or get the owner a checkout link with POST /v1/billing/checkout."
+}
+```
+
+Nothing is deleted: the dashboards stay readable and the public pages stay up. A signed-in person's edits and Import JSON are never limited. An account that already pays answers `409 already_subscribed` to the checkout call (nothing to pay; every call works). To lift the limits, `POST /v1/billing/checkout` (Manage key; `{ "interval": "monthly" | "yearly", "promotionCode"?: "…" }`, the code applied when given one) answers `{ "checkoutUrl", "sessionId" }`. Give `checkoutUrl` to the person; it is a hosted Stripe page. The moment they pay, the account is on Solo and updates are live.
+
+A different 403, `claim_required`, has two meanings. When the person has not claimed the account within 24 hours of sign-up, every key call answers it, with `claimUrl`, `upgradeUrl` and a `fix`; nothing is deleted, `GET /v1/me` and the checkout still answer, and every call works again the moment the person opens the claim link. Give them `claimUrl` again and wait; do not sign them up anew. And from sign-up on, until the person has claimed the account, a call that would send a share email (`POST /v1/dashboards/{id}/shares`, or `shareWith`) answers it with `claimUrl` and a `fix`: an account you opened can send share emails only after the person has claimed it. Build and publish first, give the person the link and the claim link, and share once they have signed in.
 
 ### 6. Over MCP instead of HTTP
 
@@ -634,8 +651,8 @@ Next month, replace both documents; neither has a row list, so there is no appen
 - A status grid is `{ nameKey, statusKey, data }` plus optional `statuses` (your words to good, warn or bad), `noteKey`, `hrefKey`; up to 200 items, names unique; without `statuses` a status is good, warn, bad or empty; an append merges by name, and one that would make more than 200 rows is refused.
 - A heatmap is `{ layout, valueKey, data }` plus `xKey` and `yKey` (`layout: "grid"`, x and y as strings (`"07"`, not `7`), at most 60 distinct x and 60 distinct y values) or `dateKey` (`layout: "calendar"`, dates as YYYY-MM-DD spanning at most 366 days), and optional `format`, `prefix`, `suffix`; up to 1000 rows, one per cell or date; an append merges by cell or date, and one that would make more than 1000 rows is refused. The latest date sets a calendar's 366-day window: an append drops the days before it and counts them in `dropped`, and an append that would push every stored day out of it is refused. A calendar: `{"layout":"calendar","dateKey":"date","valueKey":"minutes","suffix":" min","data":[{"date":"2026-11-23","minutes":45},{"date":"2026-11-24","minutes":30}]}`.
 - Titles up to 120 characters, labels up to 80, table cells up to 200. `scheme` is `ink` (default), `carbon`, `paper`, `ledger`, `slate` or `signal`.
-- Treat `fix` as the next instruction and `example` as the shape to copy. A `429` carries `Retry-After` in seconds (the next UTC minute). A `409 conflict` means two calls changed one dashboard at once: send the call again, one at a time.
-- Tell the person four things when you hand over the link: the URL; that the claim link in their email (or `claimUrl`) makes the account theirs and must be opened within 24 hours, or updates pause until it is; that the trial is seven days, once per person; and that the account is deleted after 30 days if nobody claims or pays.
+- Treat `fix` as the next instruction and `example` as the shape to copy. A `429` carries `Retry-After` in seconds: to the next UTC minute for a key's `rate_limited`, to the next UTC day for `daily_limit` and for the sign-up caps. A `409 conflict` means two calls changed one dashboard at once: send the call again, one at a time.
+- Tell the person four things when you hand over the link: the URL; that the claim link in their email (or `claimUrl`) makes the account theirs and must be opened within 24 hours, or updates pause until it is; that Free is one dashboard that your AI or your code builds and updates, each chart once a day; Solo ($10 a month or $96 a year) is 20 dashboards, live updates, Format with AI and public pages without the bar; and that the account is deleted after 30 days if nobody claims or pays.
 - A waterfall is `{ nameKey, valueKey, data }` plus optional `totalKey` (a row with it `true` is a full column: with a value it sets the running total, with the value left out or `null` it shows the total so far), `invert`, `format`, `prefix`, `suffix`; up to 40 steps, names may repeat; no append: send the whole document with `PUT /v1/visuals/{id}/data`.
 - A treemap is `{ nameKey, valueKey, data }` plus optional `groupKey` (one level of groups, at most 12), `format`, `prefix`, `suffix`; up to 200 items, values 0 or more, names unique within their group; no append: send the whole document with `PUT /v1/visuals/{id}/data`.
 - A sankey is `{ sourceKey, targetKey, valueKey, data }` plus optional `format`, `prefix`, `suffix`; up to 100 flows between at most 50 items, values above 0; no flow from an item to itself, no repeated pair and no loop (a flow whose target already leads back to its source is refused, the loop named); no append: send the whole document with `PUT /v1/visuals/{id}/data`.

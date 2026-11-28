@@ -12,11 +12,11 @@
 
 Given a person who wants "a dashboard of these numbers", an agent that has read `SKILL.md` can:
 
-1. **Sign the person up** with `POST /v1/signup` (no key needed): one call with their email address answers a Manage key, an MCP URL and a claim link. The account starts on a seven-day Solo trial, no card.
+1. **Sign the person up** with `POST /v1/signup` (no key needed): one call with their email address answers a Manage key, an MCP URL and a claim link. The account starts on Free, no card: one dashboard that the key builds and keeps current.
 2. **Build a live dashboard in one call**: `POST /v1/dashboards` with the visuals and `publish: true` answers the public URL. Re-running the same body never makes duplicates.
 3. **Keep it fresh**: replace one visual, append rows to a chart or a table (JSON or CSV), or update several visuals at once by ref.
 4. **Make a narrower key for CI or a cron**, so the Manage key never lands in a repository secret.
-5. **Handle the end of the trial**: a failed call answers `requires_solo` with a `fix`; the agent asks for a Stripe Checkout link and hands it to the person.
+5. **Handle Free's daily rhythm**: past the day's limit a call answers `daily_limit` with `nextUpdateAt` and a `fix`; the agent hands the person one JSON block that names each visual by its ref, to import into that dashboard (they open it and choose Import JSON), or asks for a Stripe Checkout link and hands that over.
 
 Four worked examples are valid as written: a pull request queue, AI coding spend, a client's page speed report and a coding team's flow metrics.
 
@@ -57,7 +57,7 @@ Cursor, Claude, ChatGPT and Grok steps are in [the MCP server docs](https://outp
 - [llms.txt](https://outputcharts.com/llms.txt): the one file an agent needs to find everything.
 - [Agent API docs](https://outputcharts.com/docs/agent-api): every call, every error with its fix.
 - [OpenAPI 3.1](https://api.outputcharts.com/v1/openapi.json) and [the visual types](https://api.outputcharts.com/v1/schema): no key needed.
-- [Pricing](https://outputcharts.com/pricing): Free is one dashboard by paste; Solo is $10 a month or $96 a year for 20 dashboards, API keys, push and Format with AI. Every new account starts with seven days of Solo, no card.
+- [Pricing](https://outputcharts.com/pricing): Free is one dashboard that your AI or your code builds and updates, each chart once a day; Solo ($10 a month or $96 a year) is 20 dashboards, live updates, Format with AI and public pages without the bar.
 
 ## Keep this copy current
 
